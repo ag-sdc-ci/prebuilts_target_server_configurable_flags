@@ -2,12 +2,16 @@ shadow prebuilt repo: server_configurable_flags (target)
   upstream: system/server_configurable_flags
   api-level: 34 payload (branch 34-20261024)
   provenance: LOCAL makeapex build in ag-build container (user builder) 2026-10-24
-    16:34Z - forgejo runner down org-wide, CI route unavailable. Signed apexes
+    16:34Z initial - forgejo runner down org-wide, CI route unavailable. Signed apexes
     org.blisslabs.ag.ext.server_configurable_flags(.dev).apex + .idsig (blobs
     deleted after extraction, not tracked).
-  recipe: apex/server_configurable_flags @ 6dd51d9f43caf955b4af9508606410e735b6c87d
-    (APEXBUILD sha256 786d8ec9fbb3e66e..., working-tree makedepends fix
-    'libbase android-core-headers' uncommitted on top)
+    17:03Z rebuild (makeapex -e -f, incremental) after recipe header fix: dev
+    payload now ships include/. Main .so byte-identical to initial build
+    (md5 ca8c9d88...), shadow update is additive (include/ only).
+  recipe: apex/server_configurable_flags @ d89a3a456021f2cd5f5f2acd20afae8d97dc8a67
+    (header fix: _package-dev installs get_flags.h + disaster_recovery.h by exact
+    path from libflags/include/; makedepends fix 31e9a18 beneath; not pushed,
+    runner down)
   layout: flattened root (payload contents at repo root)
   modules: server_configurable_flags (cc_prebuilt_library shared+static,
     mirrors source cc_library incl. double_loadable/vndk/min_sdk 29/
@@ -15,15 +19,19 @@ shadow prebuilt repo: server_configurable_flags (target)
   payload: lib/libserver_configurable_flags.so (ELF x86_64, Android 34, NDK
     r30, needs libbase/libcutils/libc++_shared) + lib/libserver_configurable_flags.a
     (static; dev payload shipped duplicate server_configurable_flags.a, identical
-    md5 cb46762e..., deduped). Dummies (_libdummy*, libdummy_* chains) and
+    md5 cb46762e..., deduped) + include/server_configurable_flags/get_flags.h
+    (md5 f127b366...) + include/server_configurable_flags/disaster_recovery.h
+    (md5 a47928e6...). Dummies (_libdummy*, libdummy_* chains) and
     etc/linker.config.json filtered per convention.
-  notes: GAP - payload include/ is EMPTY. Source headers live at
-    libflags/include/server_configurable_flags/{get_flags.h,disaster_recovery.h};
-    recipe _package-dev() copies include/* from repo root (does not exist).
-    Android.bp keeps export_include_dirs:["include"] to mirror source - do not
-    expect consumers that #include <server_configurable_flags/get_flags.h>
-    (e.g. frameworks/base/core/jni/AndroidRuntime.cpp) to compile until a
-    recipe fix lands. GAP - aconfigd and flags_health_check binaries NOT built
+  notes: include/ FIXED (was empty - recipe _package-dev copied from
+    nonexistent repo-root include/). Consumers like
+    frameworks/base/core/jni/AndroidRuntime.cpp
+    (#include <server_configurable_flags/get_flags.h>) can now compile.
+    DIVERGENCE: los-21 source tree libflags/include/server_configurable_flags/
+    also has get_cflags.h, absent from the android14-release build revision;
+    no external consumer found in los-21 (only server_configurable_flags.cc
+    itself) - intentionally not shipped to keep headers matching built .so.
+    GAP - aconfigd and flags_health_check binaries NOT built
     (bin/ empty; ninja produced disaster_recovery.o only) - recipe build()
     targets out/lib64/libserver_configurable_flags.so only; cc_binary modules
     need libaconfig_storage_protos_cc/libprotobuf-cpp-lite (aconfigd) and a
@@ -32,4 +40,4 @@ shadow prebuilt repo: server_configurable_flags (target)
     (rust track). server_configurable_flags_test is test-only, dropped.
     No java/jar module exists in the source repo (bp_module_index confirms),
     so no java_import is exposed despite a batch-state note expecting one.
-  date: 2026-10-24
+  date: 2026-10-24 (17:03Z rebuild)
