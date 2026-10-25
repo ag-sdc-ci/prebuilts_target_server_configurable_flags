@@ -4,6 +4,23 @@
 // .so filename) dropped - not a source module name. recovery_available dropped
 // (not in source). double_loadable/vndk/export_include_dirs mirrored from
 // source system/server_configurable_flags/libflags/Android.bp.
+//
+// R1 rust-slice refresh (2026-10-25, additive; recipe pkgrel=2):
+//   - cc_library_static libflags_rust_cpp_bridge -> cc_prebuilt_library_static
+//     (rust_get_flags.cpp + cxxbridge-generated rust_libflags_cxx_generated.cc,
+//     both baked into the .a; generated TU includes "rust_get_flags.hpp" [shipped
+//     in include/] and "rust/cxx.h" [satisfied by prebuilts/target/external/rust/cxx
+//     cxx-bridge-header genrule]). The source genrule
+//     libflags_rust_generated_cpp_bridge (tools: ["cxxbridge"]) is NOT
+//     re-declared: its output is compiled into the prebuilt .a, and the
+//     cxxbridge tool itself ships in prebuilts/target/external/rust/cxx bin/
+//     for any module that re-declares the genrule.
+//   - rust_library libflags_rust is shipped as ARTIFACTS ONLY (lib/libflags_rust.rlib
+//     device bionic panic=abort, lib64/libflags_rust.rlib host glibc; rustc 1.75.0
+//     direct, edition 2021, --extern cxx=libcxx.rlib from the cxx shadow): no
+//     rust_prebuilt_library module until a real consumer lands (R2/R3 rust slices)
+//     and soong can validate the wiring; nothing in the current fleet graph
+//     consumes libflags_rust (grep-verified los-21).
 
 package {
     default_applicable_licenses: ["Android-Apache-2.0"],
@@ -34,4 +51,17 @@ cc_prebuilt_library {
     static: {
         srcs: ["lib/libserver_configurable_flags.a"],
     },
+}
+
+cc_prebuilt_library_static {
+    name: "libflags_rust_cpp_bridge",
+    srcs: ["lib/libflags_rust_cpp_bridge.a"],
+    host_supported: true,
+    check_elf_files: false,
+    prefer: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    min_sdk_version: "33",
 }

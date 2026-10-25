@@ -34,10 +34,29 @@ shadow prebuilt repo: server_configurable_flags (target)
     GAP - aconfigd and flags_health_check binaries NOT built
     (bin/ empty; ninja produced disaster_recovery.o only) - recipe build()
     targets out/lib64/libserver_configurable_flags.so only; cc_binary modules
-    need libaconfig_storage_protos_cc/libprotobuf-cpp-lite (aconfigd) and a
-    build target addition (flags_health_check). GAP - libflags_rust,
-    libflags_rust_cpp_bridge, libflags_rust_generated_cpp_bridge NOT built
-    (rust track). server_configurable_flags_test is test-only, dropped.
+    need libaconfig_storage_protos/libprotobuf-cpp-lite (aconfigd) and a
+    build target addition (flags_health_check). server_configurable_flags_test
+    is test-only, dropped.
     No java/jar module exists in the source repo (bp_module_index confirms),
     so no java_import is exposed despite a batch-state note expecting one.
-  date: 2026-10-24 (17:03Z rebuild)
+  RUST SLICE (2026-10-25 refresh, additive): GAP CLOSED for libflags_rust +
+    libflags_rust_cpp_bridge. Source pinned 8e4e7235 (los-21 checkout snap,
+    24Q2-release; the libflags rust files only exist after
+    android-14.0.0_r67, so the android14-release branch CANNOT provide them -
+    recipe source pin changed accordingly, pkgrel=2). Build: bp2ninja cc .so
+    (unchanged semantics: DT_NEEDED libbase/libcutils/libc++_shared/libm/
+    libdl/libc identical to the batch-2 .so, zero cxxbridge/rust symbol refs
+    - source cc_library does NOT dep the bridge, NO relink) + cxxbridge
+    codegen via the ext-cxx cxxbridge host tool + NDK clang++ bridge .a +
+    AOSP prebuilt rustc 1.75.0-direct libflags_rust rlibs (device
+    x86_64-linux-android -O -C panic=abort -C relocation-model=pic; host
+    x86_64-unknown-linux-gnu). Payload additions: lib/libflags_rust_cpp_bridge.a
+    (md5 ba71ccaf...), lib/libflags_rust.rlib (device, md5 a44054f8...),
+    lib64/libflags_rust.rlib (host, md5 0f9e8712...),
+    include/rust_get_flags.hpp (md5 f619d3ec...). Existing cc artifacts
+    (lib/libserver_configurable_flags.{so,a}) untouched from b5b6736.
+    libflags_rust_generated_cpp_bridge genrule NOT re-declared in the bp
+    (output compiled into the bridge .a; cxxbridge tool ships in the cxx
+    shadow). rust_library libflags_rust = artifacts only, no
+    rust_prebuilt_library module (no fleet consumer; R2/R3 wire it).
+  date: 2026-10-24 (17:03Z rebuild) + 2026-10-25 (rust slice refresh)
